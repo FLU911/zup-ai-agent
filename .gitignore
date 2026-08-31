@@ -18,6 +18,7 @@ out/
 scratchpad/
 drafts/почта-агент/tmp/
 drafts/tmp/
+почта/tmp/
 *.xlsx
 *.mxl
 *.pdf
