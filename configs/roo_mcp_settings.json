@@ -1,0 +1,29 @@
+{
+  "mcpServers": {
+    "VA": {
+      "type": "streamableHttp",
+      "url": "http://127.0.0.1:8080/mcp",
+      "alwaysAllow": [
+        "connect_test_client",
+        "close_test_client",
+        "manage_test_client_profiles",
+        "manage_variables",
+        "open_feature_file",
+        "load_features",
+        "check_syntax",
+        "run_scenario",
+        "stop_scenario",
+        "select_scenario",
+        "select_step",
+        "get_test_results",
+        "get_VanessaAutomation_state",
+        "get_environment_data",
+        "get_active_window_data",
+        "get_form_analysis",
+        "get_window_list_testclient",
+        "search_for_steps_by_keywords",
+        "get_data_from_knowledge_base"
+      ]
+    }
+  }
+}

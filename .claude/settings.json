@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "mcp__VA__connect_test_client",
+      "mcp__VA__close_test_client",
+      "mcp__VA__manage_test_client_profiles",
+      "mcp__VA__manage_variables",
+      "mcp__VA__open_feature_file",
+      "mcp__VA__load_features",
+      "mcp__VA__check_syntax",
+      "mcp__VA__run_scenario",
+      "mcp__VA__stop_scenario",
+      "mcp__VA__select_scenario",
+      "mcp__VA__select_step",
+      "mcp__VA__get_test_results",
+      "mcp__VA__get_VanessaAutomation_state",
+      "mcp__VA__get_environment_data",
+      "mcp__VA__get_active_window_data",
+      "mcp__VA__get_form_analysis",
+      "mcp__VA__get_form_element_data",
+      "mcp__VA__get_table_data",
+      "mcp__VA__get_window_list_testclient",
+      "mcp__VA__get_window_screenshot_os",
+      "mcp__VA__window_management",
+      "mcp__VA__manage_form_elements",
+      "mcp__VA__search_for_steps_by_keywords",
+      "mcp__VA__get_data_from_knowledge_base",
+      "Read",
+      "Glob",
+      "Grep"
+    ],
+    "deny": [
+      "Bash",
+      "WebFetch",
+      "WebSearch",
+      "mcp__VA__user_actions_recording",
+      "mcp__VA__manage_command_interface",
+      "Edit(.claude/skills/**)",
+      "Write(.claude/skills/**)",
+      "Edit(CLAUDE.md)",
+      "Write(CLAUDE.md)"
+    ],
+    "ask": [
+      "Write",
+      "Edit",
+      "mcp__VA__execute_form_actions",
+      "mcp__VA__execute_feature_step"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "mcp__VA__manage_form_elements|mcp__VA__execute_form_actions",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/check_exact_match.py\"",
+            "timeout": 10,
+            "statusMessage": "Проверяю exact_match"
+          }
+        ]
+      }
+    ]
+  }
+}
