@@ -47,6 +47,9 @@ def main():
     p.add_argument("--живые", required=True, help="файл с именами, снятыми с живой формы")
     p.add_argument("--что", default="", help="что именно открывали: объект и форма")
     p.add_argument("--заметка", default="", help="строка-другая от руки: что выяснилось")
+    p.add_argument("--сырой", action="store_true",
+                   help="в файле не список имён, а сырой вывод get_form_analysis: "
+                        "имена вытащим регуляркой сами")
     p.add_argument("--выборочно", action="store_true",
                    help="в файле не весь состав формы, а только проверенные имена: "
                         "тогда про остальные имена словаря ничего не утверждаем")
@@ -54,7 +57,16 @@ def main():
 
     текст = io.open(args.словарь, encoding="utf-8").read()
     словарь = имена_словаря(текст)
-    живые = {с.strip() for с in io.open(args.живые, encoding="utf-8") if s_ok(s := s_strip(с))}
+    сырьё = io.open(args.живые, encoding="utf-8").read()
+    if args.сырой:
+        живые = set(re.findall(r"с именем '([^']+)'", сырьё))
+        живые |= set(re.findall(r"в таблице '([^']+)'", сырьё))
+        живые |= set(re.findall(r"^\s*([А-Яа-яЁёA-Za-z0-9_]+)\s*$", сырьё, re.M))
+        # вывод format="buttons": имя элемента стоит в квадратных скобках
+        живые |= {и for и in re.findall(r"\[([^\]]+)\]", сырьё)
+                  if re.match(r"^[А-Яа-яЁёA-Za-z0-9_]+$", и)}
+    else:
+        живые = {с.strip() for с in сырьё.splitlines() if s_ok(s_strip(с))}
 
     подтверждено = sorted(словарь & живые)
     только_в_словаре = sorted(словарь - живые)
