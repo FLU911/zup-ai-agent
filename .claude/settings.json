@@ -59,6 +59,12 @@
             "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/check_exact_match.py\"",
             "timeout": 10,
             "statusMessage": "Проверяю exact_match"
+          },
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/check_decision_fields.py\"",
+            "timeout": 10,
+            "statusMessage": "Проверяю поля-решения"
           }
         ]
       }
