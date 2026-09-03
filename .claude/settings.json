@@ -65,6 +65,18 @@
             "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/check_decision_fields.py\"",
             "timeout": 10,
             "statusMessage": "Проверяю поля-решения"
+          },
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/check_hiring_fields.py\"",
+            "timeout": 10,
+            "statusMessage": "Проверяю обязательные поля приёма"
+          },
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/check_staffing_fields.py\"",
+            "timeout": 10,
+            "statusMessage": "Проверяю позицию штатного расписания"
           }
         ]
       }
