@@ -79,6 +79,17 @@
             "statusMessage": "Проверяю позицию штатного расписания"
           }
         ]
+      },
+      {
+        "matcher": "mcp__VA__manage_form_elements|mcp__VA__execute_form_actions|mcp__VA__window_management|mcp__VA__get_form_element_data",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/check_object_fields.py\"",
+            "timeout": 10,
+            "statusMessage": "Проверяю обязательные поля объекта"
+          }
+        ]
       }
     ]
   }
