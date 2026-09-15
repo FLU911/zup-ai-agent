@@ -70,7 +70,11 @@ description: Формирует регламентированный отчёт 
 ## Порядок выполнения
 
 1. Собери четыре входных значения.
-2. `connect_test_client(profileName="AGENT_TEST_CLIENT")`.
+2. Убедись, что клиент тестирования подключён: `get_vanessa_automation_state`;
+   если нет — имя профиля возьми из `manage_test_client_profiles(action="get_list")`
+   и подключи через `manage_test_client(action="connect", ...)`. Инструмента
+   `connect_test_client` в наборе нет, а на бенчмарке подключение забрано —
+   тогда просто работай с уже поднятым клиентом.
 3. Установи четыре входные переменные (`action=set`, `is_global=true`).
 4. Запусти сценарий тремя вызовами, **без `filePath` в `run_scenario`**:
    `open_feature_file(filePath="<абсолютный путь>/6-НДФЛ.feature")`,

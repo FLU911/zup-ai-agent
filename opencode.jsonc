@@ -31,13 +31,34 @@
       // а расчёт зарплаты по кнопке «Заполнить» идёт до получаса.
       // Значение то же, что у Claude Code в .mcp.json: 40 минут.
       "timeout": 2400000
+    },
+
+    // Сервер знаний: словари форм по запросу вместо чтения файлов.
+    // 162 словаря — это ~250 тыс. токенов, в промпт они не влезают ни при
+    // каком контексте, поэтому знание отдаётся не толчком, а по запросу.
+    "znaniya": {
+      "type": "local",
+      "command": ["python", "C:/claude/сбер/knowledge_server.py"],
+      "enabled": true,
+      "timeout": 120000
+    },
+
+    // Реестр ловушек: предполётный brief под задачу и поиск по тексту ошибки.
+    "lovushki": {
+      "type": "local",
+      "command": ["python", "C:/claude/реестр-ловушек/server/mcp_server.py"],
+      "enabled": true,
+      "timeout": 120000
     }
   },
 
   "instructions": [
     "CLAUDE.md",
     "drafts/ДЛЯ-ДРУГИХ-ИИ/01-СИСТЕМНЫЙ-ПРОМПТ.md",
-    "drafts/ДЛЯ-ДРУГИХ-ИИ/02-СПРАВОЧНИК-ЗАКРЫТИЕ-МЕСЯЦА.md"
+    "drafts/ДЛЯ-ДРУГИХ-ИИ/02-СПРАВОЧНИК-ЗАКРЫТИЕ-МЕСЯЦА.md",
+    // Указатель словарей — в контексте всегда. Замер 13.09.2026: сервер
+    // знаний подключён, но модель сама к нему не идёт; с указателем идёт.
+    "drafts/словари/ИНДЕКС.md"
   ],
 
   // Зеркало permissions из .claude/settings.json.
@@ -57,9 +78,10 @@
     "task": "allow",
     "skill": "allow",
 
-    "va_connect_test_client": "allow",
-    "va_close_test_client": "allow",
-    "va_manage_test_client_profiles": "allow",
+    "va_connect_test_client": "deny",
+    "va_close_test_client": "deny",
+    "va_manage_test_client": "deny",
+    "va_manage_test_client_profiles": "deny",
     "va_manage_variables": "allow",
     "va_open_feature_file": "allow",
     "va_load_features": "allow",
@@ -91,7 +113,10 @@
     "webfetch": "deny",
     "websearch": "deny",
     "va_user_actions_recording": "deny",
-    "va_manage_command_interface": "deny",
+    // Разрешён 13.09.2026: это навигация по командному интерфейсу, данных
+    // он не меняет, а без него закрыт штатный путь к панелям отчётов —
+    // у «Кадровых отчетов» собственной навигационной ссылки нет.
+    "va_manage_command_interface": "allow",
 
     // правки файлов: спрашивает, а словари скиллов и CLAUDE.md не трогает
     // вовсе. В OpenCode ключ edit закрывает и write, и patch.
