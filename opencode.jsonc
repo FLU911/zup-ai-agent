@@ -1,0 +1,182 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // Конфиг уровня проекта для OpenCode.
+  // Запускать opencode ИЗ КОРНЯ ПРОЕКТА, иначе блоки ниже не подхватятся.
+  //
+  // Цель — дать любой модели ровно тот же контекст и те же ограничения,
+  // что есть у Claude Code. Что откуда берётся:
+  //
+  //   mcp          — тот же сервер Vanessa Automation, что в .mcp.json;
+  //   instructions — правила проекта (CLAUDE.md) и справочники;
+  //   permission   — зеркало блока permissions из .claude/settings.json;
+  //   agent        — те же субагенты, что в .claude/agents/ (промпт
+  //                  подставляется из файла, второй копии текста нет).
+  //
+  // Скиллы дублировать не нужно: OpenCode сам читает .claude/skills/**/SKILL.md.
+  // Короткие команды в .opencode/command/ — только чтобы вызывать их с косой
+  // черты. Хук на exact_match живёт в .opencode/plugin/exact-match.js.
+  //
+  // Что в OpenCode проверить руками после изменения этого файла:
+  //   opencode run --dir . "перечисли доступные тебе инструменты va_*"
+  // Разбор различий двух инструментов — docs/10-claude-и-opencode.md.
+
+  "mcp": {
+    "va": {
+      "type": "remote",
+      "url": "http://127.0.0.1:8080/mcp",
+      "enabled": true,
+
+      // ОБЯЗАТЕЛЬНО. По умолчанию OpenCode рвёт вызов MCP через 5 секунд,
+      // а расчёт зарплаты по кнопке «Заполнить» идёт до получаса.
+      // Значение то же, что у Claude Code в .mcp.json: 40 минут.
+      "timeout": 2400000
+    },
+
+    // Сервер знаний: словари форм по запросу вместо чтения файлов.
+    // 157 словарей — это ~250 тыс. токенов, в промпт они не влезают ни при
+    // каком контексте, поэтому знание отдаётся не толчком, а по запросу.
+    "znaniya": {
+      "type": "local",
+      "command": ["python", "../сбер/knowledge_server.py"],
+      "enabled": true,
+      "timeout": 120000
+    },
+
+    // Реестр ловушек: предполётный brief под задачу и поиск по тексту ошибки.
+    "lovushki": {
+      "type": "local",
+      "command": ["python", "../реестр-ловушек/server/mcp_server.py"],
+      "enabled": true,
+      "timeout": 120000
+    }
+  },
+
+  "instructions": [
+    "CLAUDE.md",
+    "drafts/ДЛЯ-ДРУГИХ-ИИ/01-СИСТЕМНЫЙ-ПРОМПТ.md",
+    "drafts/ДЛЯ-ДРУГИХ-ИИ/02-СПРАВОЧНИК-ЗАКРЫТИЕ-МЕСЯЦА.md",
+    // Указатель словарей — в контексте всегда. Замер 13.09.2026: сервер
+    // знаний подключён, но модель сама к нему не идёт; с указателем идёт.
+    "drafts/словари/ИНДЕКС.md"
+  ],
+
+  // Зеркало permissions из .claude/settings.json.
+  // Инструменты MCP в OpenCode называются <имя сервера>_<имя инструмента>,
+  // то есть va_run_scenario, а не mcp__VA__run_scenario.
+  "permission": {
+    // всё, что не перечислено ниже, спрашивает — как в Claude Code
+    "*": "ask",
+
+    // чтение базы и репозитория — свободно
+    "read": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "list": "allow",
+    "todowrite": "allow",
+    "question": "allow",
+    "task": "allow",
+    "skill": "allow",
+
+    "va_connect_test_client": "deny",
+    "va_close_test_client": "deny",
+    "va_manage_test_client": "deny",
+    "va_manage_test_client_profiles": "deny",
+    "va_manage_variables": "allow",
+    "va_open_feature_file": "allow",
+    "va_load_features": "allow",
+    "va_check_syntax": "allow",
+    "va_run_scenario": "allow",
+    "va_stop_scenario": "allow",
+    "va_select_scenario": "allow",
+    "va_select_step": "allow",
+    "va_get_test_results": "allow",
+    "va_get_VanessaAutomation_state": "allow",
+    "va_get_environment_data": "allow",
+    "va_get_active_window_data": "allow",
+    "va_get_form_analysis": "allow",
+    "va_get_form_element_data": "allow",
+    "va_get_table_data": "allow",
+    "va_get_window_list_testclient": "allow",
+    "va_get_window_screenshot_os": "allow",
+    "va_window_management": "allow",
+    "va_manage_form_elements": "allow",
+    "va_search_for_steps_by_keywords": "allow",
+    "va_get_data_from_knowledge_base": "allow",
+
+    // спрашивает: эти два вызова меняют данные в базе
+    "va_execute_form_actions": "ask",
+    "va_execute_feature_step": "ask",
+
+    // запрещено насовсем
+    "bash": "deny",
+    "webfetch": "deny",
+    "websearch": "deny",
+    "va_user_actions_recording": "deny",
+    // Разрешён 13.09.2026: это навигация по командному интерфейсу, данных
+    // он не меняет, а без него закрыт штатный путь к панелям отчётов —
+    // у «Кадровых отчетов» собственной навигационной ссылки нет.
+    "va_manage_command_interface": "allow",
+
+    // правки файлов: спрашивает, а словари скиллов и CLAUDE.md не трогает
+    // вовсе. В OpenCode ключ edit закрывает и write, и patch.
+    "edit": {
+      "*": "ask",
+      ".claude/skills/**": "deny",
+      "CLAUDE.md": "deny",
+      "AGENTS.md": "deny",
+      // Свои ограничения агент не редактирует. Без этих строк запрет ходить
+      // в интернет держался на честном слове: файл с запретом лежал в рабочей
+      // папке и был доступен на запись, как любой другой.
+      "opencode.jsonc": "deny",
+      ".opencode/**": "deny",
+      ".claude/settings.json": "deny",
+      ".claude/settings.local.json": "deny",
+      ".claude/hooks/**": "deny",
+      ".claude/agents/**": "deny",
+      ".mcp.json": "deny"
+    }
+  },
+
+  // Те же субагенты, что у Claude Code в .claude/agents/.
+  // Промпт подставляется из файла — единственный источник текста остаётся
+  // там же. Описание приходится дублировать: OpenCode берёт его отсюда.
+  // Меняешь description в .claude/agents/<имя>.md — поправь и здесь.
+  "agent": {
+    "va-data-analyst": {
+      "mode": "subagent",
+      "description": "Аналитик данных и командного интерфейса 1С. Собирает командный интерфейс и справочные данные из базы для одного сценария ТестПлана перед началом исследования. Только чтение.",
+      "prompt": "{file:./.claude/agents/va-data-analyst.md}"
+    },
+    "va-researcher": {
+      "mode": "subagent",
+      "description": "Исследователь: проходит сценарий ТестПлана руками в клиенте тестирования 1С, записывает действия и оформляет результат исследования.",
+      "prompt": "{file:./.claude/agents/va-researcher.md}"
+    },
+    "va-reviewer-research": {
+      "mode": "subagent",
+      "description": "Код-ревьюер результатов исследования. Проверяет отчёт Исследователя по чек-листу и выносит вердикт: принять или вернуть на доработку.",
+      "prompt": "{file:./.claude/agents/va-reviewer-research.md}"
+    },
+    "va-writer": {
+      "mode": "subagent",
+      "description": "Писатель сценариев Vanessa Automation. По результату исследования пишет feature-файл, отлаживает его прогонами через MCP и доводит до зелёного.",
+      "prompt": "{file:./.claude/agents/va-writer.md}"
+    },
+    "va-reviewer-feature": {
+      "mode": "subagent",
+      "description": "Код-ревьюер feature-файлов. Проверяет готовый сценарий Vanessa Automation по чек-листу, включая machine-check через grep и check_syntax, и выносит вердикт.",
+      "prompt": "{file:./.claude/agents/va-reviewer-feature.md}"
+    },
+    "va-code-analyst": {
+      "mode": "subagent",
+      "description": "Аналитик кода 1С. Ищет в исходниках конфигурации причину UI-блокировки, помеченной маркером UI_CONFIG_BLOCK, и оценивает, есть ли программный обход.",
+      "prompt": "{file:./.claude/agents/va-code-analyst.md}"
+    },
+    "va-db-admin": {
+      "mode": "subagent",
+      "description": "Администратор тестовой базы. Восстанавливает базу клиента тестирования из DT-эталона между сценариями и верифицирует результат.",
+      "prompt": "{file:./.claude/agents/va-db-admin.md}"
+    }
+  }
+}
